@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -10,8 +11,11 @@ import (
 )
 
 //Consts of errs with Storage
-const(
-
+var (
+	//Errors for registration
+	ErrEmailAlredyExists = errors.New("Email alredy exists");
+	ErrShortPass = errors.New("Password is shorter than 8");
+	ErrInvalidInput = errors.New("Invalid input")
 )
 
 //User model
