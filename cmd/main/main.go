@@ -5,6 +5,7 @@ import (
 	"e-wallet/internal/lib/env"
 	"e-wallet/internal/logger"
 	"e-wallet/internal/storage"
+	"fmt"
 	"log/slog"
 	"os"
 )
@@ -21,10 +22,12 @@ func main(){
 	//TODO: init storage
 	s, err := storage.New(dbPath)
 	if err != nil{
-		log.Error("Some problem")
+		log.Error("Some problem", ErrorWrapper(err))
 		os.Exit(1)
 	}
-	
+	if err != nil{
+		log.Error("Db error", ErrorWrapper(err))
+	}
 	log.Info("Storage was init")
 	//TODO: init router
 	
@@ -37,3 +40,4 @@ func ErrorWrapper(err error) slog.Attr{
 		Value: slog.StringValue(err.Error()),
 	}
 }
+
