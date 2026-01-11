@@ -5,7 +5,6 @@ import (
 	"e-wallet/internal/lib/env"
 	"e-wallet/internal/logger"
 	"e-wallet/internal/storage"
-	"fmt"
 	"log/slog"
 	"os"
 )
@@ -27,6 +26,16 @@ func main(){
 	}
 	if err != nil{
 		log.Error("Db error", ErrorWrapper(err))
+	}
+	userid, err := s.EnterAuth("test@mail.ru", "12345678")
+	if err != nil{
+		log.Error("Error", ErrorWrapper(err))
+		os.Exit(1)
+	}
+	err = s.CreateEWallet(userid, "CNY")
+	if err != nil{
+		log.Error("Error", ErrorWrapper(err))
+		os.Exit(1)
 	}
 	log.Info("Storage was init")
 	//TODO: init router
