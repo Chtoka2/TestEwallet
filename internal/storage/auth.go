@@ -7,6 +7,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+//Func registration user, I use it to register user in DB
 func (s *Storage) RegistAUTH(email string, password string) (uuid.UUID, error){
 	var ID uuid.UUID
 	if len(password) < 8{
@@ -58,4 +59,20 @@ func (s *Storage) CreateEWallet(UserID uuid.UUID) (error){
 		return result.Error
 	}
 	return nil
+}
+
+func (s *Storage) EnterAuth(email string, password string) (uuid.UUID, error){
+	tx := s.db.Begin()
+	defer tx.Rollback()
+	var user User
+	var ID uuid.UUID
+	result := s.db.Where("email = ?", email).First(&user)
+	if result.Error != nil{
+		return ID, result.Error
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Hash), []byte(password)); err != nil{
+		return ID, ErrPasswordIncorrect
+	}
+	tx.Commit()
+	return user.ID, nil
 }

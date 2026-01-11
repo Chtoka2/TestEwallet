@@ -12,10 +12,13 @@ import (
 
 //Consts of errs with Storage
 var (
-	//Errors for registration
 	ErrEmailAlredyExists = errors.New("Email alredy exists");
 	ErrShortPass = errors.New("Password is shorter than 8");
 	ErrInvalidInput = errors.New("Invalid input")
+	ErrUserNotFound = errors.New("User not found")
+	ErrPasswordIncorrect = errors.New("Password is incorrect")
+	ErrWalletsNotFound = errors.New("Wallets is not found")
+	ErrWalletWithCurrencyNotFound = errors.New("Currency is not found")
 )
 
 //User model
