@@ -52,3 +52,4 @@ func change_balance(s *Storage, walletID uuid.UUID, currency string, summ int64,
 	result = s.db.Model(&wallet).Update("balance", wallet.Balance)
 	return result.Error
 }
+

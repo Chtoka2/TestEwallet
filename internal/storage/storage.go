@@ -19,6 +19,8 @@ var (
 	ErrPasswordIncorrect = errors.New("Password is incorrect")
 	ErrWalletsNotFound = errors.New("Wallets is not found")
 	ErrWalletWithCurrencyNotFound = errors.New("Currency is not found")
+	ErrCurencyNotInCurrencies = errors.New("Our service don't have this currency")
+	ErrCurrencyWalletExist = errors.New("Wallet with this currency alredy exist")
 )
 
 //User model
@@ -31,7 +33,7 @@ type User struct {
 
 type Wallet struct {
 	ID        uuid.UUID `gorm:"type:uuid;primaryKey"`
-	UserID    uuid.UUID `gorm:"type:uuid;uniqueIndex;not null"`
+	UserID    uuid.UUID `gorm:"type:uuid;not null"`
 	Balance   int64     `gorm:"not null;default:0"`
 	Currency  string    `gorm:"not null;default:'RUB'"`
 	CreatedAt time.Time
