@@ -54,7 +54,9 @@ func (s *Storage) RegistAUTH(email string, password string) (uuid.UUID, error){
 	tx.Commit()
 	return ID, nil
 }
-
+//TODO: When I make all, rewrite it with config data, to take settings when creating
+//For example: bonus of money, I can set it in config.
+//It would be better but now this func is enough
 func (s *Storage) CreateEWallet(UserID uuid.UUID, currency string) (error){
 	var bonus int64
 	wallets, err := s.UserWallets(UserID)
@@ -114,6 +116,7 @@ func GetCurrencyes() ([]string){
 
 //I think it now useful, because many people can cheat. They can just open wallet make transaction to friend
 //then they can delete wallet and create wallet again
+// I dont delete it, because it can be useful in future
 func (s *Storage) DeleteWallet(userID uuid.UUID, currency string) error{
 	var wallet Wallet
 	wallets, err := s.UserWallets(userID)

@@ -19,6 +19,7 @@ func (s *Storage) UserWallets(userID uuid.UUID) ([]Wallet, error){
 	return wallets, nil
 }
 
+//TODO: add transactions in db, i forgot about this, hah
 func (s *Storage) Transactions(userIDFrom uuid.UUID, userIDTo uuid.UUID, currency string, summ int64) (error){
 	var walletFrom, walletTo Wallet
 	result := s.db.Where("currency = ?", currency).Where("user_id = ?", userIDFrom).First(&walletFrom)
@@ -53,3 +54,8 @@ func change_balance(s *Storage, walletID uuid.UUID, currency string, summ int64,
 	return result.Error
 }
 
+//TODO: make func to get transactions of user
+func GetTransactions(UserID uuid.UUID) []Transaction{
+	
+	return []Transaction{}
+}
