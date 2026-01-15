@@ -13,13 +13,13 @@ func main(){
 	//TODO: init config
 	cfg := config.Config_init()
 	//TODO: init .env
-	dbPath := env.Env_reader()
+	dotenv := env.Env_reader()
 	//TODO: init logger
 	log := logger.Logger_init(cfg.Env)
 	log.Info("Start new logger!")
 	
 	//TODO: init storage
-	s, err := storage.New(dbPath)
+	s, err := storage.New(dotenv.DbURL)
 	if err != nil{
 		log.Error("Some problem", ErrorWrapper(err))
 		os.Exit(1)
@@ -27,16 +27,7 @@ func main(){
 	if err != nil{
 		log.Error("Db error", ErrorWrapper(err))
 	}
-	userid, err := s.EnterAuth("test@mail.ru", "12345678")
-	if err != nil{
-		log.Error("Error", ErrorWrapper(err))
-		os.Exit(1)
-	}
-	err = s.CreateEWallet(userid, "CNY")
-	if err != nil{
-		log.Error("Error", ErrorWrapper(err))
-		os.Exit(1)
-	}
+	_ = s
 	log.Info("Storage was init")
 	//TODO: init router
 	

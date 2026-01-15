@@ -21,6 +21,8 @@ var (
 	ErrWalletWithCurrencyNotFound = errors.New("Currency is not found")
 	ErrCurencyNotInCurrencies = errors.New("Our service don't have this currency")
 	ErrCurrencyWalletExist = errors.New("Wallet with this currency alredy exist")
+	ErrInsufficientFunds = errors.New("Wallet has not enough balance to make transaction")
+	ErrInvalidAmount = errors.New("Invalid amount")
 )
 
 //User model
@@ -44,8 +46,6 @@ type Transaction struct {
 	WalletFrom uuid.UUID `gorm:"type:uuid;index"`
 	WalletTo   uuid.UUID `gorm:"type:uuid;index"`
 	Amount     int64     `gorm:"not null"`
-	Type       string    `gorm:"not null"`
-	Status     string    `gorm:"not null;default:'pending'"`
 	CreatedAt  time.Time
 }
 
