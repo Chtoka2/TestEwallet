@@ -72,13 +72,13 @@ func (s *Storage) CreateEWallet(ctx context.Context, UserID uuid.UUID, currency 
 		}
 	}
 	switch currency{
-	case USD:
+	case USD: // a cent
 		bonus = 1000
-	case RUB:
+	case RUB: // a penny
 		bonus = 100000
-	case CNY:
-		bonus = 100
-	case EUR:
+	case CNY: // a fyn
+		bonus = 1000
+	case EUR: // a eurocent
 		bonus = 1000
 	default:
 		return ErrCurencyNotInCurrencies

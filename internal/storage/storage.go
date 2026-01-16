@@ -23,6 +23,9 @@ var (
 	ErrCurrencyWalletExist = errors.New("Wallet with this currency alredy exist")
 	ErrInsufficientFunds = errors.New("Wallet has not enough balance to make transaction")
 	ErrInvalidAmount = errors.New("Invalid amount")
+	ErrInvalidExchangeRate = errors.New("Invalid exchange rate")
+	ErrSameCurrency = errors.New("You cannot convert same curencies")
+	ErrConversionResultZero = errors.New("conversion result cannot be zero or smaller")
 )
 
 //User model

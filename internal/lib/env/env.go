@@ -9,6 +9,7 @@ import (
 
 type DotEnv struct{
 	DbURL string
+	Commission float64
 }
 
 func Env_reader() DotEnv{

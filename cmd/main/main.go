@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"e-wallet/config"
 	"e-wallet/internal/lib/env"
 	"e-wallet/internal/logger"
@@ -27,7 +28,22 @@ func main(){
 	if err != nil{
 		log.Error("Db error", ErrorWrapper(err))
 	}
-	_ = s
+	userid, err := s.GetUserIDByEmail(context.Background(), "test@mail.ru")
+	if err != nil{
+		log.Error("Cannot get userid", ErrorWrapper(err))
+		os.Exit(1)
+	}
+	err = s.ConvertCurrency(
+		context.Background(),
+		userid,
+		"RUB", "USD",
+		100,
+		0.012734,
+	)
+	if err != nil{
+		log.Error("Cannot convert", ErrorWrapper(err))
+		os.Exit(1)
+	}
 	log.Info("Storage was init")
 	//TODO: init router
 	
