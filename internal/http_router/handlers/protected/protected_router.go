@@ -10,6 +10,5 @@ import (
 
 func New(log *slog.Logger, s *storage.Storage) http.Handler{
 	r := chi.NewRouter()
-
+	return r
 }
-
