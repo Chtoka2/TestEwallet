@@ -17,7 +17,6 @@ type IDGetter_by_email interface{
 type Response struct {
 	Status string `json:"status"`
 	Result string `json:"result,omitempty"`
-	Error string `json:"error,omitempty"`
 }
 
 func NewGetIdByEmail(log *slog.Logger, id_getter IDGetter_by_email) (http.HandlerFunc){
@@ -30,13 +29,13 @@ func NewGetIdByEmail(log *slog.Logger, id_getter IDGetter_by_email) (http.Handle
 		email := r.URL.Query().Get("email")
 		if email == ""{
 			log.Info("Invalid request")
-			render.JSON(w, r, Response{Status: "Error", Error: "Invalid request"})
+			render.JSON(w, r, Response{Status: "Error", Result: "Invalid request"})
 			return
 		}
 		resID, err := id_getter.GetUserIDByEmail(r.Context(), email)
 		if err != nil{
 			log.Info("User not found")
-			render.JSON(w,r, Response{Status: "Error", Error: err.Error()})
+			render.JSON(w,r, Response{Status: "Error", Result: err.Error()})
 			return
 		}
 		log.Info("User id was founded", slog.String("userID", resID.String()))
