@@ -1,13 +1,14 @@
 package main
 
 import (
-	"context"
 	"e-wallet/config"
+	"e-wallet/internal/http_router"
 	"e-wallet/internal/lib/env"
 	"e-wallet/internal/logger"
 	"e-wallet/internal/storage"
 	"log/slog"
 	"os"
+	"net/http"
 )
 
 func main(){
@@ -22,32 +23,25 @@ func main(){
 	//TODO: init storage
 	s, err := storage.New(dotenv.DbURL)
 	if err != nil{
-		log.Error("Some problem", ErrorWrapper(err))
-		os.Exit(1)
-	}
-	if err != nil{
-		log.Error("Db error", ErrorWrapper(err))
-	}
-	userid, err := s.GetUserIDByEmail(context.Background(), "test@mail.ru")
-	if err != nil{
-		log.Error("Cannot get userid", ErrorWrapper(err))
-		os.Exit(1)
-	}
-	err = s.ConvertCurrency(
-		context.Background(),
-		userid,
-		"RUB", "USD",
-		100,
-		0.012734,
-	)
-	if err != nil{
-		log.Error("Cannot convert", ErrorWrapper(err))
+		log.Error("Database error", ErrorWrapper(err))
 		os.Exit(1)
 	}
 	log.Info("Storage was init")
 	//TODO: init router
-	
+	r := http_router.Init_router(log, s)
 	//TODO: init server
+	serv := &http.Server{
+		Addr: cfg.HttpServer.Address,
+		Handler: r,
+		ReadTimeout: cfg.HttpServer.Timeout,
+		WriteTimeout: cfg.HttpServer.Timeout,
+		IdleTimeout: cfg.HttpServer.IdleTimeout,
+	}
+	log.Info("Address of server", slog.String("Address", serv.Addr))
+	if err := serv.ListenAndServe(); err != nil{
+		log.Info("Server cannot run", ErrorWrapper(err))
+	}
+	log.Info("Server stopped")
 }
 
 func ErrorWrapper(err error) slog.Attr{
