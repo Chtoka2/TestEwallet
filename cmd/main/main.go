@@ -50,4 +50,3 @@ func ErrorWrapper(err error) slog.Attr{
 		Value: slog.StringValue(err.Error()),
 	}
 }
-
