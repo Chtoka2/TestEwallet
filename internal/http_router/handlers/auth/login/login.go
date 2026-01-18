@@ -26,7 +26,7 @@ type EnterInterface interface{
 	EnterAuth(context.Context, string, string) (uuid.UUID, error)
 }
 
-func New(log *slog.Logger, s EnterInterface, jwtSvc *jwt.Service) http.HandlerFunc{
+func New(log *slog.Logger, s EnterInterface, jwtSvc jwt.JWTGeneratorInterface) http.HandlerFunc{
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.auth.login"
 		log := log.With(

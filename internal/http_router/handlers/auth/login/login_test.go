@@ -43,12 +43,12 @@ func (m *MockJWT) Generate(userID uuid.UUID, ttl time.Duration) (string, error) 
 
 // Тест
 func TestNew(t *testing.T) {
-	jwtSvc := jwt.NewJWTService("test-secret") // фиксированный секрет
-
+	// фиксированный секрет
 	tests := []struct {
 		name         string
 		body         string
 		storageMock  func() *MockStorage
+		jwtMock func() *MockJWT
 		wantStatus   int
 		wantCookie   bool
 	}{
@@ -59,6 +59,13 @@ func TestNew(t *testing.T) {
 				return &MockStorage{
 					enterAuthFn: func(ctx context.Context, email, password string) (uuid.UUID, error) {
 						return uuid.MustParse("12345678-1234-5678-1234-567812345678"), nil
+					},
+				}
+			},
+			jwtMock: func() *MockJWT {
+				return &MockJWT{
+					generateFn: func(userID uuid.UUID, ttl time.Duration) (string, error) {
+						return "fake-jwt-token", nil
 					},
 				}
 			},
@@ -82,6 +89,26 @@ func TestNew(t *testing.T) {
 			},
 			wantStatus: 400,
 		},
+		{
+			name: "Ошибка генерации JWT",
+			body: `{"email": "test@example.com", "password": "12345678"}`,
+			storageMock: func() *MockStorage {
+				return &MockStorage{
+					enterAuthFn: func(ctx context.Context, email, password string) (uuid.UUID, error) {
+						return uuid.MustParse("12345678-1234-5678-1234-567812345678"), nil
+					},
+				}
+			},
+			jwtMock: func() *MockJWT {
+				return &MockJWT{
+					generateFn: func(userID uuid.UUID, ttl time.Duration) (string, error) {
+						return "", errors.New("fjkd")
+					},
+				}
+			},
+			wantStatus: 500,
+			wantCookie: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -90,7 +117,10 @@ func TestNew(t *testing.T) {
 			if tt.storageMock != nil {
 				storage = tt.storageMock()
 			}
-
+			var jwtSvc jwt.JWTGeneratorInterface
+			if tt.jwtMock != nil{
+				jwtSvc = tt.jwtMock()
+			}
 			router := chi.NewRouter()
 			router.Post("/auth/login", New(slog.Default(), storage, jwtSvc))
 
