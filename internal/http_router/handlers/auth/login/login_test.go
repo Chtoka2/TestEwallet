@@ -1,66 +1,116 @@
 package login
-//internal/http_router/handlers/auth/login
+
+//cd internal/http_router/handlers/auth/login  
+
 import (
+	"bytes"
 	"context"
-	"e-wallet/internal/lib/jwt"
-	"log/slog"
+	"errors"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"bytes"
+	"log/slog"
+
+	"e-wallet/internal/lib/jwt"
 )
 
-type Stub struct{}
-
-func (s *Stub) EnterAuth(ctx context.Context, email string, password string) (uuid.UUID, error){
-	return uuid.New(), nil
+// Моки
+type MockStorage struct {
+	enterAuthFn func(ctx context.Context, email, password string) (uuid.UUID, error)
 }
 
-func TestHandler(t *testing.T){
-	// Настройка
-	secretKey := os.Getenv("JWT_SECRET")
-	if secretKey == "" {
-		secretKey = "test-secret"
+func (m *MockStorage) EnterAuth(ctx context.Context, email, password string) (uuid.UUID, error) {
+	if m.enterAuthFn != nil {
+		return m.enterAuthFn(ctx, email, password)
 	}
-	jwtSvc := jwt.NewJWTService(secretKey)
+	return uuid.Nil, errors.New("not implemented")
+}
 
-	router := chi.NewRouter()
-	router.Post("/auth/login", New(slog.Default(), &Stub{}, jwtSvc))
+type MockJWT struct {
+	generateFn func(userID uuid.UUID, ttl time.Duration) (string, error)
+}
 
-	// Создаём запрос
-	bodies := []string{
-		`{"email": "test@example.com", "password": "12345678"}`,
-		`{"email": "test@example.com"}`,
-	} 
-	for _, i := range bodies {
-		req := httptest.NewRequest(http.MethodPost, "/auth/login", bytes.NewBufferString(i))
+func (m *MockJWT) Generate(userID uuid.UUID, ttl time.Duration) (string, error) {
+	if m.generateFn != nil {
+		return m.generateFn(userID, ttl)
+	}
+	return "", errors.New("not implemented")
+}
 
+// Тест
+func TestNew(t *testing.T) {
+	jwtSvc := jwt.NewJWTService("test-secret") // фиксированный секрет
 
-		req.Header.Set("Content-Type", "application/json")
+	tests := []struct {
+		name         string
+		body         string
+		storageMock  func() *MockStorage
+		wantStatus   int
+		wantCookie   bool
+	}{
+		{
+			name: "успешный вход",
+			body: `{"email": "test@example.com", "password": "12345678"}`,
+			storageMock: func() *MockStorage {
+				return &MockStorage{
+					enterAuthFn: func(ctx context.Context, email, password string) (uuid.UUID, error) {
+						return uuid.MustParse("12345678-1234-5678-1234-567812345678"), nil
+					},
+				}
+			},
+			wantStatus: 200,
+			wantCookie: true,
+		},
+		{
+			name:       "невалидный JSON",
+			body:       `{"email": "test@example.com", "password": 12345}`,
+			wantStatus: 500,
+		},
+		{
+			name: "ошибка аутентификации",
+			body: `{"email": "test@example.com", "password": "wrong"}`,
+			storageMock: func() *MockStorage {
+				return &MockStorage{
+					enterAuthFn: func(ctx context.Context, email, password string) (uuid.UUID, error) {
+						return uuid.Nil, errors.New("invalid")
+					},
+				}
+			},
+			wantStatus: 400,
+		},
+	}
 
-		// Записываем ответ
-		w := httptest.NewRecorder()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var storage EnterInterface = &MockStorage{}
+			if tt.storageMock != nil {
+				storage = tt.storageMock()
+			}
 
-		// Вызываем хендлер
-		router.ServeHTTP(w, req)
+			router := chi.NewRouter()
+			router.Post("/auth/login", New(slog.Default(), storage, jwtSvc))
 
-		// Проверяем, что ответ пришёл
-		if w.Code == 0 {
-			t.Fatal("хендлер не вернул статус")
-		}
+			req := httptest.NewRequest(http.MethodPost, "/auth/login", bytes.NewBufferString(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+			w := httptest.NewRecorder()
 
-		// Успешный вход должен вернуть 200
-		if w.Code != http.StatusOK {
-			t.Errorf("ожидался статус 200, получен %d", w.Code)
-		}
+			router.ServeHTTP(w, req)
 
-		// Проверяем, что тело не пустое
-		if w.Body.Len() == 0 {
-			t.Error("тело ответа пустое")
-		}
+			if w.Code != tt.wantStatus {
+				t.Errorf("ожидался статус %d, получен %d", tt.wantStatus, w.Code)
+			}
+
+			cookies := w.Result().Cookies()
+			if tt.wantCookie && len(cookies) == 0 {
+				t.Error("ожидалась кука, но её нет")
+			}
+			if !tt.wantCookie && len(cookies) > 0 {
+				t.Errorf("кука не ожидалась, но получена: %s", cookies[0].Name)
+			}
+		})
 	}
 }

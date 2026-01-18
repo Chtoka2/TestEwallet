@@ -13,18 +13,17 @@ import (
 )
 
 type Request struct{
-	Email string `json:"email"` 
+	Email string `json:"email"`
 	Password string `json:"password"`
 }
-
 type Response struct{
 	Status string `json:"status"`
 	UserID uuid.UUID `json:"user_id,omitempty"`
-	Error string `json:"error,omitempty"`
+	Error string `json:"error"`
 }
 
 type EnterInterface interface{
-	EnterAuth(ctx context.Context, email string, password string) (uuid.UUID, error)
+	EnterAuth(context.Context, string, string) (uuid.UUID, error)
 }
 
 func New(log *slog.Logger, s EnterInterface, jwtSvc *jwt.Service) http.HandlerFunc{
