@@ -1,9 +1,8 @@
 package login
 
 import (
+	"context"
 	"e-wallet/internal/lib/jwt"
-	"e-wallet/internal/storage"
-	"errors"
 	"log/slog"
 	"net/http"
 	"time"
@@ -24,7 +23,11 @@ type Response struct{
 	Error string `json:"error,omitempty"`
 }
 
-func New(log *slog.Logger, s *storage.Storage, jwtSvc *jwt.Service) http.HandlerFunc{
+type EnterInterface interface{
+	EnterAuth(ctx context.Context, email string, password string) (uuid.UUID, error)
+}
+
+func New(log *slog.Logger, s EnterInterface, jwtSvc *jwt.Service) http.HandlerFunc{
 	return func(w http.ResponseWriter, r *http.Request) {
 		const op = "handlers.auth.login"
 		log := log.With(
