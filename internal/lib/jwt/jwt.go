@@ -22,6 +22,10 @@ type Service struct{
 	secret []byte
 }
 
+type JWTGeneratorInterface interface{
+	Generate(userID uuid.UUID, ttl time.Duration) (string, error)
+}
+
 func NewJWTService(secret string) *Service{
 	return &Service{secret: []byte(secret)}
 }

@@ -1,6 +1,7 @@
 package regist
 
 import (
+	"context"
 	"e-wallet/internal/lib/jwt"
 	"e-wallet/internal/storage"
 	"errors"
@@ -24,7 +25,11 @@ type Response struct{
 	Error string `json:"error,omitempty"`
 }
 
-func New(log *slog.Logger, s *storage.Storage, jwtSvc *jwt.Service) http.HandlerFunc{
+type RegistAuth interface{
+	RegistAUTH(ctx context.Context, email string, password string) (uuid.UUID, error)
+}
+
+func New(log *slog.Logger, s RegistAuth, jwtSvc jwt.JWTGeneratorInterface) http.HandlerFunc{
 	return func(w http.ResponseWriter, r *http.Request) {
 		op := "handlers.Auth.RegistHandler"
 		log := log.With(
@@ -34,27 +39,30 @@ func New(log *slog.Logger, s *storage.Storage, jwtSvc *jwt.Service) http.Handler
 		var req Request
 		if err := render.DecodeJSON(r.Body, &req); err != nil{
 			log.Error("Failed to decode JSON")
-			render.JSON(w,r, Response{Status: "Error", Error: "Invalid request"})
+			render.Status(r, 400)
+			render.JSON(w,r, Response{Status: "Error", Error: "Incorrect json"})
 			return
 		}
 		userID, err := s.RegistAUTH(r.Context(), req.Email, req.Password)
 		if err != nil{
 			if errors.Is(err, storage.ErrEmailAlredyExists){
+				render.Status(r, http.StatusConflict)
 				render.JSON(w,r,Response{Status: "Error", Error: "Email alredy exists"})
 				return 
 			}
 			if errors.Is(err, storage.ErrInvalidInput){
+				render.Status(r, 400)
 				render.JSON(w,r,Response{Status: "Error", Error: "Invalid input"})
 				return 
 			}
+			render.Status(r, 500)
 			render.JSON(w,r, Response{Status: "Error", Error: "Server problem"})
-			http.Error(w, "Internal server", http.StatusInternalServerError)
 			return
 		}
 		token, err := jwtSvc.Generate(userID, 15*time.Minute)
 		if err != nil{
+			render.Status(r,500)
 			render.JSON(w,r,Response{Status: "Error", Error: "Internal server"})
-			http.Error(w, "Internal server", http.StatusInternalServerError)
 			return
 		}
 		http.SetCookie(w, &http.Cookie{
