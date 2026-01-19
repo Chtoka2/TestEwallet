@@ -72,7 +72,7 @@ func New(log *slog.Logger, s RegistAuth, jwtSvc jwt.JWTGeneratorInterface) http.
 			Domain: "",
 			MaxAge: 15*60,
 			HttpOnly: true,
-			Secure: false,
+			Secure: true,
 		})
 		render.JSON(w,r,Response{Status: "OK", UserID: userID})
 	}

@@ -17,17 +17,15 @@ const UserCtxKey contextKey = "UserID"
 func New(log *slog.Logger, jwtSvc *jwt.Service) (func (next http.Handler) http.Handler){
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			authHeader := r.Header.Get("Authorization")
-			if authHeader == ""{
-				http.Error(w, "Missing Authorization header", http.StatusUnauthorized)
-				return
-			}
-			var token string
-			if len(authHeader) > 7 && authHeader[:7] == "Bearer "{
-				token = authHeader[7:] 
-			}else{
-				http.Error(w, "invalid Authorization header format", http.StatusUnauthorized)
+			authHeader, err := r.Cookie("Authorization")
+			if err != nil{
+				http.Error(w, "Hasn't cookie", 401)
 				return 
+			}
+			token := authHeader.Value
+			if token == "" {
+  	  			http.Error(w, "empty token", http.StatusUnauthorized)
+    			return
 			}
 			userid, err := jwtSvc.Validate(token)
 			if err != nil{

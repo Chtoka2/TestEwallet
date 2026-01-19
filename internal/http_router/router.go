@@ -7,6 +7,7 @@ import (
 
 	"e-wallet/internal/http_router/handlers"
 	"e-wallet/internal/http_router/handlers/auth"
+	"e-wallet/internal/http_router/handlers/protected"
 	"e-wallet/internal/http_router/middleware/logger"
 	"e-wallet/internal/lib/jwt"
 	"e-wallet/internal/storage"
@@ -29,6 +30,7 @@ func Init_router(log *slog.Logger, s *storage.Storage) http.Handler{
 	r.Use(logger.New(log))
 	r.Use(middleware.URLFormat)
 	r.Mount("/auth", auth.New(log, s, jwtSvc))
+	r.Mount("/users", protected.New(log, s, jwtSvc))
 	r.Get("/get_id", handlers.NewGetIdByEmail(log, s))
 	return r
 }

@@ -30,26 +30,26 @@ var (
 
 //User model
 type User struct {
-	ID        uuid.UUID `gorm:"type:uuid;primaryKey"`
-	Email     string    `gorm:"uniqueIndex;not null"`
-	Hash      string    `gorm:"not null"`
-	CreatedAt time.Time
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
+	Email     string    `gorm:"uniqueIndex;not null" json:"email"`
+	Hash      string    `gorm:"not null" json:"hash"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type Wallet struct {
-	ID        uuid.UUID `gorm:"type:uuid;primaryKey"`
-	UserID    uuid.UUID `gorm:"type:uuid;not null"`
-	Balance   int64     `gorm:"not null;default:0"`
-	Currency  string    `gorm:"not null;default:'RUB'"`
-	CreatedAt time.Time
+	ID        uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
+	UserID    uuid.UUID `gorm:"type:uuid;not null" json:"user_id"`
+	Balance   int64     `gorm:"not null;default:0" json:"balance"`
+	Currency  string    `gorm:"not null;default:'RUB'" json:"currency"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type Transaction struct {
-	ID         uuid.UUID `gorm:"type:uuid;primaryKey"`
-	WalletFrom uuid.UUID `gorm:"type:uuid;index"`
-	WalletTo   uuid.UUID `gorm:"type:uuid;index"`
-	Amount     int64     `gorm:"not null"`
-	CreatedAt  time.Time
+	ID         uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
+	WalletFrom uuid.UUID `gorm:"type:uuid;index" json:"wallet_from"`
+	WalletTo   uuid.UUID `gorm:"type:uuid;index" json:"wallet_to"`
+	Amount     int64     `gorm:"not null" json:"amount"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 type Storage struct{
