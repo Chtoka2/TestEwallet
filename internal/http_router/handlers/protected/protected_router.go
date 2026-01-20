@@ -1,6 +1,7 @@
 package protected
 
 import (
+	"e-wallet/internal/http_router/handlers/protected/transactions"
 	"e-wallet/internal/http_router/handlers/protected/wallets"
 	jwtauth "e-wallet/internal/http_router/middleware/JWTAuth"
 	"e-wallet/internal/lib/jwt"
@@ -15,5 +16,6 @@ func New(log *slog.Logger, s *storage.Storage, jwtSvc *jwt.Service) http.Handler
 	r := chi.NewRouter()
 	r.Use(jwtauth.New(log, jwtSvc))
 	r.Get("/wallets", wallets.New(log, s))
+	r.Get("/transactions", transactions.New(log, s))
 	return r
 }
