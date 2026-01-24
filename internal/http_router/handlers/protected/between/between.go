@@ -3,8 +3,8 @@ package between
 import (
 	"context"
 	jwtauth "e-wallet/internal/http_router/middleware/JWTAuth"
+	"e-wallet/internal/lib/ErrHandler"
 	"e-wallet/internal/storage"
-	"errors"
 	"log/slog"
 	"net/http"
 
@@ -21,17 +21,16 @@ type Request struct{
 
 type Response struct{
 	Status string `json:"status"`
-	Error string `json:"error,omitempty"`
 }
 
 type BetweenTransaction interface{
 	ConvertCurrency(
 	ctx context.Context,
 	userID uuid.UUID,
+	log *slog.Logger,
 	fromCurrency, toCurrency string,
 	amountFrom int64,
-	rate float64,
-	) error
+	) error 
 }
 
 func New(log *slog.Logger, s BetweenTransaction) http.HandlerFunc{
@@ -43,38 +42,29 @@ func New(log *slog.Logger, s BetweenTransaction) http.HandlerFunc{
 		)
 		userID, errbool := jwtauth.GetUserIDFromContext(r.Context())
 		if errbool == false{
-			log.Error("Can't find user id")
-			render.Status(r, 500)
-			render.JSON(w,r, Response{
-				Status: "Error",
-				Error: "Can't find user id",
-			})
+			ErrHandler.ErrHandler(w,r,log, storage.ErrUserNotFound)
+			return
 		}
 		var req Request
 		err := render.DecodeJSON(r.Body, &req)
 		if err != nil{
-			log.Error("Can't decode request json")
-			render.Status(r, 400)
-			render.JSON(w,r, Response{
-				Status: "Error",
-				Error: "Can't decode request json",
-			})
+			ErrHandler.ErrHandler(w,r,log,ErrHandler.ErrFailedDecodeJSON)
+			return 
 		}
-		err = s.ConvertCurrency(r.Context(), userID,
-		req.FromCurrency, req.ToCurrency, req.AmountFrom, )
+		err = s.ConvertCurrency(
+			r.Context(),
+			userID,
+			log,
+			req.FromCurrency,
+			req.ToCurrency,
+			req.AmountFrom,
+		)
 		if err != nil{
-			if errors.Is(err, storage.ErrWalletsNotFound){
-				log.Error("Can't find wallets")
-			}else if errors.Is(err, storage.ErrInsufficientFunds){
-				log.Error("In wallet insufficient funds")
-			}else if errors.Is(err, storage.ErrSameCurrency){
-				log.Error("Can't convert same currency")
-			}else if errors.Is(err, storage.ErrInvalidExchangeRate){
-				log.Error("Can't find wallets")
-			}else if errors.Is(err, storage.ErrInvalidAmount){
-				log.Error("Can't find wallets")
-			}
-
+			ErrHandler.ErrHandler(w,r,log,err)
+			return
 		}
+		render.JSON(w,r,Response{
+			Status: "OK",
+		})
 	}
 }

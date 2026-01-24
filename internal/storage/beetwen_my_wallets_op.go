@@ -27,10 +27,11 @@ func (s *Storage) ConvertCurrency(
 ) error {
 	var rate float64
 	var err error
-	if toCurrency == "RUB"{
-		rate, err = currency.GetCBRRate(ctx, log, fromCurrency)
-	}else if fromCurrency == "RUB"{
-		rate, err = currency.GetCBRRate(ctx, log, toCurrency)
+	//get rate from central bank of Russia
+	rate, err = currency.GetCBRRate(ctx, log, fromCurrency, toCurrency)
+	if err != nil{
+		log.Error("Can't take rate", slog.String("Error", err.Error()))
+		return err
 	}
 	tx := s.db.WithContext(ctx).Begin()
 	defer tx.Rollback()

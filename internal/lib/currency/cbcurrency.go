@@ -49,7 +49,7 @@ func GetCBRRate(ctx context.Context, log *slog.Logger, charCodeFrom, charCodeTo 
 		return 0, fmt.Errorf("get rate for %s: %w", charCodeTo, err)
 	}
 
-	// Конвертация через RUB: from → RUB → to
+	// Convertation through RUB: from → RUB → to
 	// 1 from = rateFrom RUB
 	// 1 to = rateTo RUB ⇒ 1 RUB = 1/rateTo to
 	// ⇒ 1 from = rateFrom / rateTo to
