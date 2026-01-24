@@ -3,6 +3,7 @@ package wallets
 import (
 	"context"
 	jwtauth "e-wallet/internal/http_router/middleware/JWTAuth"
+	"e-wallet/internal/lib/ErrHandler"
 	"e-wallet/internal/storage"
 	"log/slog"
 	"net/http"
@@ -19,7 +20,6 @@ type WalletGetter interface{
 type Response struct{
 	Status string `json:"status"`
 	Wallets []storage.Wallet `json:"wallets,omitempty"`
-	Error string `json:"error,omitempty"`
 }
 
 func New(log *slog.Logger, s WalletGetter) http.HandlerFunc{
@@ -31,22 +31,12 @@ func New(log *slog.Logger, s WalletGetter) http.HandlerFunc{
 		)
 		userid, errbool := jwtauth.GetUserIDFromContext(r.Context())
 		if errbool != true{
-			log.Error("Internal server")
-			render.Status(r, 500)
-			render.JSON(w,r,Response{
-				Status: "Error",
-				Error: "Internal server",
-			})
+			ErrHandler.ErrHandler(w,r,log,storage.ErrUserNotFound)
 			return
 		}
 		wallets, err := s.UserWallets(r.Context(), userid)
 		if err != nil{
-			log.Error("UserWallets is not found")
-			render.Status(r, 500)
-			render.JSON(w,r, Response{
-				Status: "Error",
-				Error: "User wallets not found",
-			})
+			ErrHandler.ErrHandler(w,r,log,err)
 			return
 		}
 		render.JSON(w,r, Response{

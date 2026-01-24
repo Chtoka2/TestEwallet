@@ -3,8 +3,8 @@ package transactions
 import (
 	"context"
 	jwtauth "e-wallet/internal/http_router/middleware/JWTAuth"
+	"e-wallet/internal/lib/ErrHandler"
 	"e-wallet/internal/storage"
-	"errors"
 	"log/slog"
 	"net/http"
 
@@ -17,7 +17,6 @@ type Response struct{
 	Status string `json:"status"`
 	TransactionsMy []storage.Transaction `json:"transactions_my,omitempty"`
 	TransactionsOther []storage.Transaction `json:"transactions_other,omitempty"`
-	Error string `json:"error,omitempty"`
 }
 
 type TransactionGetter interface{
@@ -38,32 +37,13 @@ func New(log *slog.Logger, s TransactionGetter)(http.HandlerFunc){
 		)
 		userId, errbool := jwtauth.GetUserIDFromContext(r.Context())
 		if errbool != true{
-			log.Error("Can't read jwt")
-			render.Status(r, 500)
-			render.JSON(w,r,Response{
-				Status: "Error",
-				Error: "Can't read json",
-			})
+			ErrHandler.ErrHandler(w,r,log,storage.ErrUserNotFound)
 			return 
 		}
 		transactionsMy, transactionsOther, err := s.GetTransactions(r.Context(), userId)
 		if err != nil{
-			if errors.Is(err, storage.ErrWalletsNotFound){
-				log.Error("Can't find wallets")
-				render.Status(r, 404)
-				render.JSON(w,r, Response{
-					Status: "Error",
-					Error: "Can't find wallets",
-				})
-				return
-			}
-			log.Error("Some problem", slog.String("Error", err.Error()))
-			render.Status(r, 500)
-			render.JSON(w,r, Response{
-				Status: "Error",
-				Error: "Internal server",
-			})
-			return 
+			ErrHandler.ErrHandler(w,r,log,err)
+			return
 		}
 		render.JSON(w,r, Response{
 			Status: "OK",

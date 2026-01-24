@@ -3,8 +3,8 @@ package new_wallet
 import (
 	"context"
 	jwtauth "e-wallet/internal/http_router/middleware/JWTAuth"
+	"e-wallet/internal/lib/ErrHandler"
 	"e-wallet/internal/storage"
-	"errors"
 	"log/slog"
 	"net/http"
 
@@ -19,7 +19,6 @@ type Request struct{
 
 type Response struct{
 	Status string `json:"status"`
-	Error string `json:"error,omitempty"`
 }
 
 type CreaterOfWallet interface{
@@ -35,60 +34,18 @@ func New(log *slog.Logger, s CreaterOfWallet) http.HandlerFunc{
 		)
 		userid, errbool := jwtauth.GetUserIDFromContext(r.Context())
 		if errbool == false{
-			log.Error("Can't find userid")
-			render.Status(r, 404)
-			render.JSON(w,r, Response{
-				Status: "Error",
-				Error: "Can't find user id",
-			})
+			ErrHandler.ErrHandler(w,r,log,storage.ErrUserNotFound)
 			return
 		}
 		var req Request
 		err := render.DecodeJSON(r.Body, &req)
 		if err != nil{
-			log.Error("Can't decode json")
-			render.Status(r, 400)
-			render.JSON(w,r,Response{
-				Status: "Error",
-				Error: "Can't decode json",
-			})
+			ErrHandler.ErrHandler(w,r,log,ErrHandler.ErrFailedDecodeJSON)
 			return 
 		}
 		err = s.CreateEWallet(r.Context(), userid, req.Currency)
 		if err != nil{
-			if errors.Is(err, storage.ErrCurrencyWalletExist){
-				log.Error("Currency wallet exists")
-				render.Status(r, 400)
-				render.JSON(w,r,Response{
-					Status: "Error",
-					Error: "Currency wallet exists",
-				})
-				return
-			}
-			if errors.Is(err, storage.ErrCurencyNotInCurrencies){
-				log.Error("Currency is not in currencies")
-				render.Status(r, 400)
-				render.JSON(w,r,Response{
-					Status: "Error",
-					Error: "Currency is not in currencies",
-				})
-				return 
-			}
-			if errors.Is(err, storage.ErrWalletsNotFound){
-				log.Error("Wallets is not found")
-				render.Status(r, 500)
-				render.JSON(w,r,Response{
-					Status: "Error",
-					Error: "Can't make transaction",
-				})
-				return
-			}
-			log.Error("Some problem")
-			render.Status(r, 500)
-			render.JSON(w,r,Response{
-				Status: "Error",
-				Error: "Couldn't create new e_wallet",
-			})
+			ErrHandler.ErrHandler(w,r,log,err)
 			return 
 		}
 		log.Info("Wallet was created")

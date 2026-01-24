@@ -2,9 +2,8 @@ package regist
 
 import (
 	"context"
+	"e-wallet/internal/lib/ErrHandler"
 	"e-wallet/internal/lib/jwt"
-	"e-wallet/internal/storage"
-	"errors"
 	"log/slog"
 	"net/http"
 	"time"
@@ -38,31 +37,17 @@ func New(log *slog.Logger, s RegistAuth, jwtSvc jwt.JWTGeneratorInterface) http.
 		)
 		var req Request
 		if err := render.DecodeJSON(r.Body, &req); err != nil{
-			log.Error("Failed to decode JSON")
-			render.Status(r, 400)
-			render.JSON(w,r, Response{Status: "Error", Error: "Incorrect json"})
+			ErrHandler.ErrHandler(w,r,log,ErrHandler.ErrFailedDecodeJSON)
 			return
 		}
 		userID, err := s.RegistAUTH(r.Context(), req.Email, req.Password)
 		if err != nil{
-			if errors.Is(err, storage.ErrEmailAlredyExists){
-				render.Status(r, http.StatusConflict)
-				render.JSON(w,r,Response{Status: "Error", Error: "Email alredy exists"})
-				return 
-			}
-			if errors.Is(err, storage.ErrInvalidInput){
-				render.Status(r, 400)
-				render.JSON(w,r,Response{Status: "Error", Error: "Invalid input"})
-				return 
-			}
-			render.Status(r, 500)
-			render.JSON(w,r, Response{Status: "Error", Error: "Server problem"})
+			ErrHandler.ErrHandler(w,r,log,err)
 			return
 		}
 		token, err := jwtSvc.Generate(userID, 15*time.Minute)
 		if err != nil{
-			render.Status(r,500)
-			render.JSON(w,r,Response{Status: "Error", Error: "Internal server"})
+			ErrHandler.ErrHandler(w,r,log,ErrHandler.ErrFailedCodeJWT)
 			return
 		}
 		http.SetCookie(w, &http.Cookie{

@@ -2,6 +2,7 @@ package login
 
 import (
 	"context"
+	"e-wallet/internal/lib/ErrHandler"
 	"e-wallet/internal/lib/jwt"
 	"log/slog"
 	"net/http"
@@ -35,29 +36,17 @@ func New(log *slog.Logger, s EnterInterface, jwtSvc jwt.JWTGeneratorInterface) h
 		)
 		var req Request
 		if err := render.DecodeJSON(r.Body, &req); err != nil{
-			log.Error("Failed to decode json")
-			render.Status(r, 500)
-			render.JSON(w,r,
-				Response{
-					Status: "Error",
-					Error: "Failed to decode json",
-				})
+			ErrHandler.ErrHandler(w,r,log, ErrHandler.ErrFailedDecodeJSON)
 			return
 		}
 		userid, err := s.EnterAuth(r.Context(), req.Email, req.Password)
 		if err != nil{
-			log.Error("Email or password incorrect")
-			render.Status(r, 400)
-			render.JSON(w,r,Response{
-				Status: "Error",
-				Error: "Data incorrect",
-			})
+			ErrHandler.ErrHandler(w,r,log,err)
 			return
 		}
 		jwttoken, err := jwtSvc.Generate(userid, 15*time.Minute)
 		if err != nil{
-			render.Status(r, 500)
-			render.JSON(w,r,Response{Status: "Error", Error: "Internal server"})
+			ErrHandler.ErrHandler(w,r,log, ErrHandler.ErrFailedCodeJSON)
 			return
 		}
 		http.SetCookie(w, &http.Cookie{

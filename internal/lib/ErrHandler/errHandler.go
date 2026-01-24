@@ -11,6 +11,7 @@ import (
 
 var(
 	ErrFailedDecodeJSON = errors.New("Failed to decode JSON")
+	ErrFailedCodeJWT = errors.New("Failed to code JWT")
 )
 
 type Response struct{
@@ -82,7 +83,6 @@ func ErrHandler(
 		log.Error("Invalid input", slog.Any("error", err))
 		Responser(w, r, err.Error(), http.StatusBadRequest)
 		return
-
 	case errors.Is(err, storage.ErrPasswordIncorrect):
 		// Неверный пароль при входе — аутентификация не удалась.
 		// Стандарт: 401 Unauthorized (не путать с 403!).
@@ -103,12 +103,11 @@ func ErrHandler(
 		log.Error("Wallet in this currency already exists", slog.Any("error", err))
 		Responser(w, r, err.Error(), http.StatusConflict)
 		return
-
-	// === 5xx: Ошибки сервера ===
 	case errors.Is(err, ErrFailedDecodeJSON):
 		log.Error("Wallets not found", slog.Any("error", err))
-		Responser(w, r, err.Error(), http.StatusInternalServerError)
+		Responser(w, r, err.Error(), http.StatusBadRequest)
 		return
+	// === 5xx: Ошибки сервера ===
 	case errors.Is(err, storage.ErrInvalidExchangeRate):
 		// Курс = 0 или отрицательный — внутренняя ошибка расчёта.
 		// Клиент ни при чём → 500.
@@ -122,7 +121,10 @@ func ErrHandler(
 		log.Error("Conversion resulted in zero", slog.Any("error", err))
 		Responser(w, r, "Conversion failed due to rate precision", http.StatusInternalServerError)
 		return
-
+	case errors.Is(err, ErrFailedCodeJWT):
+		log.Error("Conversion resulted in zero", slog.Any("error", err))
+		Responser(w, r, "Conversion failed due to rate precision", http.StatusInternalServerError)
+		return
 	default:
 		// Любая неожиданная ошибка — логируем как внутреннюю.
 		log.Error("Unexpected internal error", slog.Any("error", err))

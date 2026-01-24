@@ -1,6 +1,6 @@
 package login
 
-//cd internal/http_router/handlers/auth/login  
+//cd internal/http_router/handlers/auth/login
 
 import (
 	"bytes"
@@ -11,11 +11,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"log/slog"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+
 	"e-wallet/internal/lib/jwt"
+	"e-wallet/internal/storage"
 )
 
 // Моки
@@ -83,11 +85,11 @@ func TestNew(t *testing.T) {
 			storageMock: func() *MockStorage {
 				return &MockStorage{
 					enterAuthFn: func(ctx context.Context, email, password string) (uuid.UUID, error) {
-						return uuid.Nil, errors.New("invalid")
+						return uuid.Nil, storage.ErrPasswordIncorrect
 					},
 				}
 			},
-			wantStatus: 400,
+			wantStatus: 401,
 		},
 		{
 			name: "Ошибка генерации JWT",
