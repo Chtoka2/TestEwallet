@@ -2,6 +2,8 @@ package storage
 
 import (
 	"context"
+	"e-wallet/internal/lib/currency"
+	"log/slog"
 	"math"
 
 	"github.com/google/uuid"
@@ -19,29 +21,26 @@ import (
 func (s *Storage) ConvertCurrency(
 	ctx context.Context,
 	userID uuid.UUID,
+	log *slog.Logger,
 	fromCurrency, toCurrency string,
 	amountFrom int64,
-	rate float64,
 ) error {
-	if amountFrom < 1000 {
-		return ErrInvalidAmount
+	var rate float64
+	var err error
+	if toCurrency == "RUB"{
+		rate, err = currency.GetCBRRate(ctx, log, fromCurrency)
+	}else if fromCurrency == "RUB"{
+		rate, err = currency.GetCBRRate(ctx, log, toCurrency)
 	}
-	if rate <= 0 {
-		return ErrInvalidExchangeRate
-	}
-	if fromCurrency == toCurrency {
-		return ErrSameCurrency
-	}
-
 	tx := s.db.WithContext(ctx).Begin()
 	defer tx.Rollback()
 
 	// Находим оба кошелька пользователя
 	var walletFrom, walletTo Wallet
-	if err := tx.Where("user_id = ? AND currency = ?", userID, fromCurrency).First(&walletFrom).Error; err != nil {
+	if err = tx.Where("user_id = ? AND currency = ?", userID, fromCurrency).First(&walletFrom).Error; err != nil {
 		return ErrWalletsNotFound
 	}
-	if err := tx.Where("user_id = ? AND currency = ?", userID, toCurrency).First(&walletTo).Error; err != nil {
+	if err = tx.Where("user_id = ? AND currency = ?", userID, toCurrency).First(&walletTo).Error; err != nil {
 		return ErrWalletsNotFound
 	}
 
@@ -49,7 +48,7 @@ func (s *Storage) ConvertCurrency(
 	if walletFrom.Balance < amountFrom {
 		return ErrInsufficientFunds
 	}
-	if err := tx.Exec(
+	if err = tx.Exec(
 		"UPDATE wallets SET balance = balance - ? WHERE id = ?",
 		amountFrom, walletFrom.ID,
 	).Error; err != nil {
@@ -66,7 +65,7 @@ func (s *Storage) ConvertCurrency(
 	}
 
 	// Зачисляем
-	if err := tx.Exec(
+	if err = tx.Exec(
 		"UPDATE wallets SET balance = balance + ? WHERE id = ?",
 		amountTo, walletTo.ID,
 	).Error; err != nil {
@@ -86,3 +85,4 @@ func (s *Storage) ConvertCurrency(
 
 	return tx.Commit().Error
 }
+

@@ -2,6 +2,7 @@ package protected
 
 import (
 	maketransaction "e-wallet/internal/http_router/handlers/protected/make_transaction"
+	"e-wallet/internal/http_router/handlers/protected/new_wallet"
 	"e-wallet/internal/http_router/handlers/protected/transactions"
 	"e-wallet/internal/http_router/handlers/protected/wallets"
 	jwtauth "e-wallet/internal/http_router/middleware/JWTAuth"
@@ -19,5 +20,7 @@ func New(log *slog.Logger, s *storage.Storage, jwtSvc *jwt.Service) http.Handler
 	r.Get("/wallets", wallets.New(log, s))
 	r.Get("/transactions", transactions.New(log, s))
 	r.Post("/make_transaction", maketransaction.New(log, s))
+	r.Post("/create_wallet", new_wallet.New(log, s))
+	r.Post("/transfer_between_wallets", )
 	return r
 }
